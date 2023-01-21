@@ -32,7 +32,7 @@ def define_parameters():
     params['batch_size'] = 1000
     # Settings
     params['weights_path'] = 'weights/weights.h5'
-    params['train'] = False
+    params['train'] = True
     params["test"] = True
     params['plot_score'] = True
     params['log_path'] = 'logs/scores_' + str(datetime.datetime.now().strftime("%Y%m%d%H%M%S")) +'.txt'
@@ -155,23 +155,28 @@ def get_record(score, record):
         return record
 
 
-def display_ui(game, score, record):
+def display_ui(game, score, record,counter_games):
     myfont = pygame.font.SysFont('Segoe UI', 20)
     myfont_bold = pygame.font.SysFont('Segoe UI', 20, True)
     text_score = myfont.render('SCORE: ', True, (0, 0, 0))
     text_score_number = myfont.render(str(score), True, (0, 0, 0))
     text_highest = myfont.render('HIGHEST SCORE: ', True, (0, 0, 0))
     text_highest_number = myfont_bold.render(str(record), True, (0, 0, 0))
+    text_generation = myfont.render('GENERATION: ', True, (0, 0, 0))
+    text_generation_number = myfont.render(str(counter_games+1), True, (0, 0, 0))
     game.gameDisplay.blit(text_score, (45, 440))
     game.gameDisplay.blit(text_score_number, (120, 440))
     game.gameDisplay.blit(text_highest, (190, 440))
     game.gameDisplay.blit(text_highest_number, (350, 440))
+    game.gameDisplay.blit(text_generation,(45,460))
+    game.gameDisplay.blit(text_generation_number, (170, 460))
     game.gameDisplay.blit(game.bg, (10, 10))
 
 
-def display(player, food, game, record):
+
+def display(player, food, game, record,counter_games):
     game.gameDisplay.fill((255, 255, 255))
-    display_ui(game, game.score, record)
+    display_ui(game, game.score, record,counter_games)
     player.display_player(player.position[-1][0], player.position[-1][1], player.food, game)
     food.display_food(food.x_food, food.y_food, game)
 
@@ -251,7 +256,7 @@ def run(params):
         # Perform first move
         initialize_game(player1, game, food1, agent, params['batch_size'])
         if params['display']:
-            display(player1, food1, game, record)
+            display(player1, food1, game, record,counter_games)
         
         steps = 0       # steps since the last positive reward
         while (not game.crash) and (steps < 100):
@@ -293,14 +298,14 @@ def run(params):
 
             record = get_record(game.score, record)
             if params['display']:
-                display(player1, food1, game, record)
+                display(player1, food1, game, record,counter_games)
                 pygame.time.wait(params['speed'])
             steps+=1
         if params['train']:
             agent.replay_new(agent.memory, params['batch_size'])
         counter_games += 1
         total_score += game.score
-        print(f'Game {counter_games}      Score: {game.score}')
+        #print(f'Game {counter_games}      Score: {game.score}')
         score_plot.append(game.score)
         counter_plot.append(counter_games)
     mean, stdev = get_mean_stdev(score_plot)
