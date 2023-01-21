@@ -8,34 +8,21 @@ from DQN import DQNAgent
 from random import randint
 import random
 import statistics
+import json
 import torch.optim as optim
 import torch 
 from GPyOpt.methods import BayesianOptimization
 from bayesOpt import *
 import datetime
 import distutils.util
-DEVICE = 'cpu' # 'cuda' if torch.cuda.is_available() else 'cpu'
-
+DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 #################################
 #   Define parameters manually  #
 #################################
 def define_parameters():
-    params = dict()
     # Neural Network
-    params['epsilon_decay_linear'] = 1/100
-    params['learning_rate'] = 0.00013629
-    params['first_layer_size'] = 200    # neurons in the first layer
-    params['second_layer_size'] = 20   # neurons in the second layer
-    params['third_layer_size'] = 50    # neurons in the third layer
-    params['episodes'] = 250          
-    params['memory_size'] = 2500
-    params['batch_size'] = 1000
-    # Settings
-    params['weights_path'] = 'weights/weights.h5'
-    params['train'] = True
-    params["test"] = True
-    params['plot_score'] = True
-    params['log_path'] = 'logs/scores_' + str(datetime.datetime.now().strftime("%Y%m%d%H%M%S")) +'.txt'
+    with open('parameters/parameters.json','r') as fp:
+        params = json.load(fp)
     return params
 
 
@@ -117,7 +104,7 @@ class Player(object):
 
             update_screen()
         else:
-            pygame.time.wait(300)
+            pygame.time.wait(10)
 
 
 class Food(object):
@@ -259,13 +246,17 @@ def run(params):
             display(player1, food1, game, record,counter_games)
         
         steps = 0       # steps since the last positive reward
+
+        #When Epsilon = 0 -> Random Movements
+        #When Epsilon = 1 -> Greediest Movements
         while (not game.crash) and (steps < 100):
             if not params['train']:
                 agent.epsilon = 0.01
             else:
                 # agent.epsilon is set to give randomness to actions
-                agent.epsilon = 1 - (counter_games * params['epsilon_decay_linear'])
-
+                # Exponential decay is better
+                agent.epsilon = params['initial_epsilon'] * (params['epsilon_decay_rate_exp']**(counter_games/params['episodes']))
+                #print("New Agent Epsilon: " + str(agent.epsilon))
             # get old state
             state_old = agent.get_state(game, player1, food1)
 
